@@ -324,6 +324,28 @@ test("parseRedirects should reject wildcard patterns to index", ({
 	});
 });
 
+test("parseRedirects should not treat an index lookalike as an infinite loop", ({
+	expect,
+}) => {
+	// The `.` in the `/index(\.html)?$` check must be escaped, otherwise targets
+	// such as `/indexXhtml` are wrongly rejected as infinite loops.
+	const input = `
+/* /indexXhtml 200
+`;
+	const result = parseRedirects(input);
+	expect(result).toEqual({
+		rules: [
+			{
+				from: "/*",
+				status: 200,
+				to: "/indexXhtml",
+				lineNumber: 2,
+			},
+		],
+		invalid: [],
+	});
+});
+
 test("parseRedirects should allow root patterns to index when HTML handling disabled", ({
 	expect,
 }) => {

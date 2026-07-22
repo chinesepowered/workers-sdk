@@ -1,9 +1,10 @@
 import { execFileSync, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { beforeEach, describe, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, vi } from "vitest";
 import {
 	checkExposedPorts,
 	cleanupDuplicateImageTags,
+	getDockerHostFromEnv,
 	verifyDockerInstalled,
 } from "./../src/utils";
 import type { ContainerDevOptions } from "../src/types";
@@ -217,6 +218,39 @@ describe("verifyDockerInstalled", () => {
 			})
 		).rejects.toThrow(
 			/The Docker CLI is needed to build the configured images before deploying \(even in dry-run mode\) but could not be launched/
+		);
+	});
+});
+
+describe("getDockerHostFromEnv()", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("should return DOCKER_HOST when it is set", ({ expect }) => {
+		vi.stubEnv("WRANGLER_DOCKER_HOST", undefined);
+		vi.stubEnv("DOCKER_HOST", "tcp://1.2.3.4:2375");
+
+		expect(getDockerHostFromEnv()).toEqual("tcp://1.2.3.4:2375");
+	});
+
+	it("should prefer WRANGLER_DOCKER_HOST over DOCKER_HOST", ({ expect }) => {
+		vi.stubEnv("WRANGLER_DOCKER_HOST", "unix:///custom/docker.sock");
+		vi.stubEnv("DOCKER_HOST", "tcp://1.2.3.4:2375");
+
+		expect(getDockerHostFromEnv()).toEqual("unix:///custom/docker.sock");
+	});
+
+	it("should fall back to the platform default when neither is set", ({
+		expect,
+	}) => {
+		vi.stubEnv("WRANGLER_DOCKER_HOST", undefined);
+		vi.stubEnv("DOCKER_HOST", undefined);
+
+		expect(getDockerHostFromEnv()).toEqual(
+			process.platform === "win32"
+				? "//./pipe/docker_engine"
+				: "unix:///var/run/docker.sock"
 		);
 	});
 });

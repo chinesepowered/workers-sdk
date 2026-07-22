@@ -80,7 +80,9 @@ export function toValidWorkerName(input: string): string {
 		// Remove invalid start/end dashes
 		.replace(invalidWorkerNameStartEndRegex, "")
 		// If the name is longer than the limit let's truncate it to that
-		.slice(0, workerNameLengthLimit);
+		.slice(0, workerNameLengthLimit)
+		// Truncating can itself leave a trailing dash, so strip them again
+		.replace(invalidWorkerNameStartEndRegex, "");
 
 	if (!input.length) {
 		// If we've emptied the whole name let's replace it with a fallback value

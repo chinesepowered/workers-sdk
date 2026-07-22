@@ -1,7 +1,35 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, it, vi } from "vitest";
 import { runInTempDir, seed } from "../src/test-helpers";
-import { getWorkerNameFromProject } from "../src/worker-name";
+import {
+	checkWorkerNameValidity,
+	getWorkerNameFromProject,
+	toValidWorkerName,
+} from "../src/worker-name";
+
+describe("toValidWorkerName()", () => {
+	it("should leave an already valid name unchanged", ({ expect }) => {
+		expect(toValidWorkerName("my-worker")).toEqual("my-worker");
+	});
+
+	it("should replace invalid characters with dashes", ({ expect }) => {
+		expect(toValidWorkerName("my_worker!name")).toEqual("my-worker-name");
+	});
+
+	it("should strip leading and trailing dashes", ({ expect }) => {
+		expect(toValidWorkerName("--my-worker--")).toEqual("my-worker");
+	});
+
+	it("should fall back when the name reduces to nothing", ({ expect }) => {
+		expect(toValidWorkerName("---")).toEqual("my-worker");
+	});
+
+	it("should not end with a dash after truncating a long name", ({ expect }) => {
+		const result = toValidWorkerName(`${"a".repeat(62)}-${"b".repeat(20)}`);
+		expect(result.endsWith("-")).toBe(false);
+		expect(checkWorkerNameValidity(result).valid).toBe(true);
+	});
+});
 
 describe("getWorkerNameFromProject()", () => {
 	runInTempDir();

@@ -2,6 +2,7 @@ import { describe, it } from "vitest";
 import {
 	indexLocation,
 	parseByteSize,
+	parseHumanDuration,
 	parseJSON,
 	parseJSONC,
 	parseTOML,
@@ -402,5 +403,36 @@ describe("parseByteSize", () => {
 		expect(parseByteSize(".B")).toBeNaN();
 		expect(parseByteSize("3iB")).toBeNaN();
 		expect(parseByteSize("3ib")).toBeNaN();
+	});
+});
+
+describe("parseHumanDuration", () => {
+	it("should calculate valid durations", ({ expect }) => {
+		const cases: [string, number][] = [
+			["1s", 1],
+			["90s", 90],
+			["1min", 60],
+			["1h", 3600],
+			["1d", 86400],
+			["1w", 604800],
+			["1month", 2592000],
+			["1mo", 2592000],
+			["1year", 31536000],
+			["1yr", 31536000],
+			["1y", 31536000],
+		];
+
+		for (const [input, result] of cases) {
+			expect(parseHumanDuration(input)).toEqual(result);
+		}
+	});
+
+	it("should derive months and years from days, not weeks", ({ expect }) => {
+		expect(parseHumanDuration("1month")).toEqual(30 * parseHumanDuration("1d"));
+		expect(parseHumanDuration("1year")).toEqual(365 * parseHumanDuration("1d"));
+	});
+
+	it("should return NaN for invalid input", ({ expect }) => {
+		expect(parseHumanDuration("foo")).toBeNaN();
 	});
 });
